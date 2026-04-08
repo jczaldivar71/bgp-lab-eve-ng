@@ -1,0 +1,56 @@
+! ============================================================
+! R2 — AS 65001 — BGP Lab from Scratch (EVE-NG)
+! Role: LAN advertiser — iBGP peer to R1
+! Author: Network ThinkTank | networkthinktank.blog
+! ============================================================
+
+hostname R2
+!
+no ip domain lookup
+ip domain name lab.local
+!
+! --- Loopback for BGP Router-ID ---
+interface Loopback0
+ description BGP-Router-ID
+ ip address 2.2.2.2 255.255.255.255
+!
+! --- iBGP Link to R1 (AS 65001) ---
+interface Ethernet0/0
+ description iBGP-Link-to-R1
+ ip address 172.16.0.2 255.255.255.252
+ no shutdown
+!
+! --- LAN Interface (advertised into BGP) ---
+interface Ethernet0/1
+ description LAN-192.168.1.0-slash-24
+ ip address 192.168.1.1 255.255.255.0
+ no shutdown
+!
+! --- BGP Configuration ---
+router bgp 65001
+ bgp router-id 2.2.2.2
+ bgp log-neighbor-changes
+ !
+ ! iBGP peer — R1 in AS 65001
+ neighbor 172.16.0.1 remote-as 65001
+ neighbor 172.16.0.1 description iBGP-to-R1-AS65001
+ neighbor 172.16.0.1 update-source Loopback0
+ !
+ ! Advertise local LAN into BGP
+ ! NOTE: 192.168.1.0/24 must exist in the routing table first
+ network 192.168.1.0 mask 255.255.255.0
+!
+! --- Logging ---
+logging buffered 64000 debugging
+!
+end
+
+! ============================================================
+! VERIFICATION COMMANDS:
+! ============================================================
+!   show ip bgp summary
+!   show ip bgp neighbors 172.16.0.1 (iBGP to R1)
+!   show ip route bgp
+!   show ip bgp 192.168.1.0 (verify local network is in BGP)
+!   ping 192.168.2.1 source 192.168.1.1 (end-to-end test)
+! ============================================================
