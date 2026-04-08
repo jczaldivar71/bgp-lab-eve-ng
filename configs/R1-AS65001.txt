@@ -1,0 +1,57 @@
+! ============================================================
+! R1 — AS 65001 — BGP Lab from Scratch (EVE-NG)
+! Role: eBGP peer to R3 (AS 65002) + iBGP hub to R2
+! Author: Network ThinkTank | networkthinktank.blog
+! ============================================================
+
+hostname R1
+!
+no ip domain lookup
+ip domain name lab.local
+!
+! --- Loopback for BGP Router-ID ---
+interface Loopback0
+ description BGP-Router-ID
+ ip address 1.1.1.1 255.255.255.255
+!
+! --- eBGP Link to R3 (AS 65002) ---
+interface Ethernet0/0
+ description eBGP-Link-to-R3
+ ip address 10.0.0.1 255.255.255.252
+ no shutdown
+!
+! --- iBGP Link to R2 (AS 65001) ---
+interface Ethernet0/1
+ description iBGP-Link-to-R2
+ ip address 172.16.0.1 255.255.255.252
+ no shutdown
+!
+! --- BGP Configuration ---
+router bgp 65001
+ bgp router-id 1.1.1.1
+ bgp log-neighbor-changes
+ !
+ ! eBGP peer — R3 in AS 65002
+ neighbor 10.0.0.2 remote-as 65002
+ neighbor 10.0.0.2 description eBGP-to-R3-AS65002
+ neighbor 10.0.0.2 ebgp-multihop 2
+ !
+ ! iBGP peer — R2 in AS 65001
+ neighbor 172.16.0.2 remote-as 65001
+ neighbor 172.16.0.2 description iBGP-to-R2-AS65001
+ neighbor 172.16.0.2 next-hop-self
+ neighbor 172.16.0.2 update-source Loopback0
+!
+! --- Logging ---
+logging buffered 64000 debugging
+!
+end
+
+! ============================================================
+! VERIFICATION COMMANDS — run after lab is up:
+! ============================================================
+!   show ip bgp summary
+!   show ip bgp neighbors 10.0.0.2 (eBGP to R3)
+!   show ip bgp neighbors 172.16.0.2 (iBGP to R2)
+!   show ip route bgp
+! ============================================================
